@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{C0BBED45-4B0D-304B-FEC4-BFA69F1F036D}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "GameToSurvive",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
