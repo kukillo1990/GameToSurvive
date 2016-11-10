@@ -3,6 +3,7 @@
 #include "GameToSurvive.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "GameToSurviveCharacter.h"
+#include "Gun.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AGameToSurviveCharacter
@@ -11,7 +12,7 @@ AGameToSurviveCharacter::AGameToSurviveCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
+	
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
@@ -42,6 +43,23 @@ AGameToSurviveCharacter::AGameToSurviveCharacter()
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
 
+void AGameToSurviveCharacter::BeginPlay()
+{
+	ACharacter::BeginPlay();
+
+	if (GunToCarryClass && GetMesh())
+	{
+		UWorld* const World = GetWorld();
+		if (World != NULL)
+		{
+			// spawn the projectile at the muzzle
+			GunCarried = World->SpawnActor<AGun>(GunToCarryClass);
+			GunCarried->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
+
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -69,8 +87,16 @@ void AGameToSurviveCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AGameToSurviveCharacter::OnResetVR);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AGameToSurviveCharacter::OnFire);
 }
 
+
+void AGameToSurviveCharacter::OnFire()
+{
+	if (GunCarried)
+		GunCarried->OnFire();
+}
 
 void AGameToSurviveCharacter::OnResetVR()
 {

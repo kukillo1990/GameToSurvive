@@ -3,6 +3,7 @@
 #include "GameToSurvive.h"
 #include "GameToSurviveGameMode.h"
 #include "GameToSurviveCharacter.h"
+#include "MainHUD.h"
 
 AGameToSurviveGameMode::AGameToSurviveGameMode()
 {
@@ -12,4 +13,5 @@ AGameToSurviveGameMode::AGameToSurviveGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+	HUDClass = AMainHUD::StaticClass();
 }
