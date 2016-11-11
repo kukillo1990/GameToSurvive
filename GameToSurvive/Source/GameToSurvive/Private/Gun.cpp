@@ -4,6 +4,8 @@
 #include "Gun.h"
 #include "Animation/AnimInstance.h"
 #include "Projectile.h"
+#include "GameToSurviveCharacter.h"
+#include "DrawDebugHelpers.h"
 
 //Sets default values
 AGun::AGun()
@@ -37,10 +39,40 @@ void AGun::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
 
+	if (bIsAiming)
+	{
+		if (OwnersAnimInstance && !OwnersAnimInstance->Montage_IsPlaying(AimAnimation))
+		{
+			OwnersAnimInstance->Montage_Play(AimAnimation);
+		}
+	}
+
+	if (bIsFiring && CanShoot())
+	{
+		Fire();
+	}
+
+
 }
 
-void AGun::OnFire()
+void AGun::StartAiming()
 {
+	if (AimAnimation)
+		bIsAiming = true;
+}
+
+void AGun::StopAiming()
+{
+	bIsAiming = false;
+	if (OwnersAnimInstance)
+	{
+		OwnersAnimInstance->Montage_Stop(0.5f, AimAnimation);
+	}
+}
+
+void AGun::Fire()
+{
+	UE_LOG(LogTemp, Warning, TEXT("SHOOTING!"));
 	//try and fire a projectile
 	if (ProjectileClass != NULL)
 	{
@@ -49,26 +81,52 @@ void AGun::OnFire()
 		{
 			const FRotator SpawnRotation = FP_MuzzleLocation->GetComponentRotation();
 			const FVector SpawnLocation = FP_MuzzleLocation->GetComponentLocation();
-	
+
 			// spawn the projectile at the muzzle
-			World->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
-			
+			AProjectile* NewProjectile = World->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			UCameraComponent* CameraComp = CharacterOwner->GetFollowCamera();
+
+			FVector StartLocation = CameraComp->GetComponentLocation() + CameraComp->GetForwardVector() * CharacterOwner->GetCameraBoom()->TargetArmLength;
+			FVector EndLocation = StartLocation + CameraComp->GetForwardVector() * 100000.0f;
+			struct FHitResult HitResult;
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility))
+			{
+				FVector NewVelocity = HitResult.ImpactPoint - SpawnLocation;
+				NewVelocity.Normalize();
+				NewProjectile->SetVelocity(NewVelocity);
+				DrawDebugLine(GetWorld(), StartLocation, HitResult.ImpactPoint, FColor::Red, false, 5.0f);
+			}
 		}
 	}
-	
+
 	// try and play the sound if specified
 	if (FireSound != NULL)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 	}
-	
+
 	// try and play a firing animation if specified
-	if (FireAnimation != NULL)
+	if (OwnersAnimInstance)
 	{
-		if (AnimInstance != NULL)
-		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
-		}
+		UAnimMontage* TargetAnim = bIsAiming ? FireFromShoulderAnimation : FireFromHipAnimation;
+		if (TargetAnim && !OwnersAnimInstance->Montage_IsPlaying(TargetAnim))
+			OwnersAnimInstance->Montage_Play(TargetAnim);
 	}
+
+	NextTimeToShoot = GetWorld()->GetTimeSeconds() + FireRate;
+}
+
+void AGun::SetCharacterOwner(class AGameToSurviveCharacter* NewCharacterOwner)
+{
+	CharacterOwner = NewCharacterOwner;
+	if (CharacterOwner && CharacterOwner->GetMesh())
+	{
+		OwnersAnimInstance = CharacterOwner->GetMesh()->GetAnimInstance();
+	}
+}
+
+bool AGun::CanShoot()
+{
+	return GetWorld()->GetTimeSeconds() > NextTimeToShoot;
 }
 

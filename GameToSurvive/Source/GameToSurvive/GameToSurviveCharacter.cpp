@@ -55,7 +55,7 @@ void AGameToSurviveCharacter::BeginPlay()
 			// spawn the projectile at the muzzle
 			GunCarried = World->SpawnActor<AGun>(GunToCarryClass);
 			GunCarried->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-
+			EquipGun(GunCarried);
 		}
 	}
 }
@@ -88,14 +88,44 @@ void AGameToSurviveCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AGameToSurviveCharacter::OnResetVR);
 
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AGameToSurviveCharacter::OnFire);
+	PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AGameToSurviveCharacter::OnStartFire);
+	PlayerInputComponent->BindAction("Shoot", IE_Released, this, &AGameToSurviveCharacter::OnStopFire);
+
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AGameToSurviveCharacter::OnStartAim);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AGameToSurviveCharacter::OnStopAim);
 }
 
 
-void AGameToSurviveCharacter::OnFire()
+void AGameToSurviveCharacter::OnStartFire()
 {
 	if (GunCarried)
-		GunCarried->OnFire();
+		GunCarried->StartFiring();
+}
+
+void AGameToSurviveCharacter::OnStopFire()
+{
+	if (GunCarried)
+		GunCarried->StopFiring();
+}
+
+void AGameToSurviveCharacter::OnStartAim()
+{
+	if (GunCarried)
+		GunCarried->StartAiming();
+}
+
+void AGameToSurviveCharacter::OnStopAim()
+{
+	if (GunCarried)
+		GunCarried->StopAiming();
+}
+
+void AGameToSurviveCharacter::EquipGun(AGun* Gun)
+{
+	if (Gun)
+	{
+		Gun->SetCharacterOwner(this);
+	}
 }
 
 void AGameToSurviveCharacter::OnResetVR()

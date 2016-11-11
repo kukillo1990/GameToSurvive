@@ -66,7 +66,13 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
-	void OnFire();
+	void OnStartFire();
+	void OnStopFire();
+
+	void OnStartAim();
+	void OnStopAim();
+
+	void EquipGun(AGun* Gun);
 
 public:
 	/** Returns CameraBoom subobject **/

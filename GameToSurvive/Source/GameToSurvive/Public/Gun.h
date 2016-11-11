@@ -34,7 +34,19 @@ public:
 		class USceneComponent* FP_MuzzleLocation;
 
 	/** Fires a virtual projectile. */
-	void OnFire();
+	void StartFiring() { bIsFiring = true; }
+	void StopFiring() { bIsFiring = false; }
+
+	void StartAiming();
+	void StopAiming();
+
+	void Fire();
+
+	void SetCharacterOwner(class AGameToSurviveCharacter* NewCharacterOwner);
+
+	bool CanAim() const { return bCanAim; }
+
+	bool CanShoot();
 
 protected:
 	
@@ -54,9 +66,26 @@ protected:
 
 	/** AnimMontage to play each time we fire */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-		class UAnimMontage* FireAnimation;
+		class UAnimMontage* FireFromHipAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-		class UAnimInstance* AnimInstance;
+		class UAnimMontage* FireFromShoulderAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		class UAnimMontage* AimAnimation;
+
+	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
+		bool bCanAim = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
+		float FireRate = 0.2f;
+
+	float NextTimeToShoot = 0.0f;
+
+	AGameToSurviveCharacter* CharacterOwner;
+	UAnimInstance* OwnersAnimInstance;
+
+	bool bIsFiring = false;
+	bool bIsAiming = false;
 
 };
