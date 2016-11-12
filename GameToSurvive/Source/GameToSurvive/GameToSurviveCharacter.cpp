@@ -4,6 +4,8 @@
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "GameToSurviveCharacter.h"
 #include "Gun.h"
+#include "Projectile.h"
+#include "Animation/AnimInstance.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AGameToSurviveCharacter
@@ -57,6 +59,29 @@ void AGameToSurviveCharacter::BeginPlay()
 			GunCarried->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 			EquipGun(GunCarried);
 		}
+	}
+}
+
+float AGameToSurviveCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = APawn::TakeDamage(Damage, DamageEvent, EventInstigator, DamageCauser);
+	if ((Health -= ActualDamage) <= 0)
+		Destroy();
+	else
+		PlayHitAnim();
+	return ActualDamage;
+}
+
+void AGameToSurviveCharacter::PlayHitAnim()
+{
+	if (HitReactionMontages.Num() <= 0)
+		return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && !AnimInstance->Montage_IsPlaying(HitReactionMontages[LastHitAnimIndex]))
+	{
+		LastHitAnimIndex = (++LastHitAnimIndex) % HitReactionMontages.Num();
+		AnimInstance->Montage_Play(HitReactionMontages[LastHitAnimIndex]);
 	}
 }
 

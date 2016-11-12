@@ -3,6 +3,8 @@
 #include "GameToSurvive.h"
 #include "Projectile.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "GameToSurviveCharacter.h"
+#include "Gun.h"
 
 
 AProjectile::AProjectile()
@@ -36,10 +38,11 @@ AProjectile::AProjectile()
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	// Only add impulse and destroy projectile if we hit a physics
-	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) )
+	if ((OtherActor != NULL) && (OtherActor != this))
 	{
-		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
-
+		FDamageEvent DamageEvent;
+		AController* OwnerController = OwnerGun ? (OwnerGun->GetCharacterOwner() ? OwnerGun->GetCharacterOwner()->GetController() : NULL) : NULL;
+		OtherActor->TakeDamage(Damage, DamageEvent, OwnerController, this);
 		Destroy();
 	}
 	else
@@ -51,5 +54,15 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 void AProjectile::SetVelocity(const FVector& ForcedVelocity)
 {
 	ProjectileMovement->Velocity = ForcedVelocity * ProjectileMovement->InitialSpeed;
+}
+
+float AProjectile::GetDamage()
+{
+	return Damage;
+}
+
+void AProjectile::SetGunOwner(AGun* NewOwnerGun)
+{
+	OwnerGun = NewOwnerGun;
 }
 

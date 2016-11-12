@@ -43,14 +43,13 @@ public:
 	void Fire();
 
 	void SetCharacterOwner(class AGameToSurviveCharacter* NewCharacterOwner);
+	AGameToSurviveCharacter* GetCharacterOwner() const { return CharacterOwner;  }
 
 	bool CanAim() const { return bCanAim; }
 
 	bool CanShoot();
 
 protected:
-	
-
 
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)

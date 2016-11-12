@@ -28,9 +28,18 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Gameplay)
 	TSubclassOf<class AGun> GunToCarryClass;
+	
+	UPROPERTY(EditAnywhere, Category = Gameplay)
+		TArray<class UAnimMontage*> HitReactionMontages;
 
+	UPROPERTY(EditDefaultsOnly, Category = Gameplay)
+	int Health = 100;
 
 	virtual void BeginPlay() override;
+
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void PlayHitAnim();
 
 protected:
 
@@ -82,5 +91,6 @@ public:
 
 private:
 	AGun* GunCarried;
+	unsigned int LastHitAnimIndex = 0;
 };
 

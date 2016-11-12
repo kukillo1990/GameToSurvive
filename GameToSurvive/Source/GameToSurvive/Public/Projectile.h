@@ -32,6 +32,15 @@ public:
 
 	void SetVelocity(const FVector& ForcedVelocity);
 
+	float GetDamage();
+
+	void SetGunOwner(class AGun* NewOwnerGun);
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	unsigned int Damage = 10;
+
 private:
 	FVector Velocity;
+
+	class AGun* OwnerGun;
 };

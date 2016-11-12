@@ -84,12 +84,15 @@ void AGun::Fire()
 
 			// spawn the projectile at the muzzle
 			AProjectile* NewProjectile = World->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			NewProjectile->SetGunOwner(this);
 			UCameraComponent* CameraComp = CharacterOwner->GetFollowCamera();
 
-			FVector StartLocation = CameraComp->GetComponentLocation() + CameraComp->GetForwardVector() * CharacterOwner->GetCameraBoom()->TargetArmLength;
+			FVector Diff = SpawnLocation - CameraComp->GetComponentLocation();
+			float Dot = FVector::DotProduct(Diff, CameraComp->GetForwardVector());
+			FVector StartLocation = CameraComp->GetComponentLocation() + CameraComp->GetForwardVector() * Dot;
 			FVector EndLocation = StartLocation + CameraComp->GetForwardVector() * 100000.0f;
 			struct FHitResult HitResult;
-			if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility))
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Pawn))
 			{
 				FVector NewVelocity = HitResult.ImpactPoint - SpawnLocation;
 				NewVelocity.Normalize();
