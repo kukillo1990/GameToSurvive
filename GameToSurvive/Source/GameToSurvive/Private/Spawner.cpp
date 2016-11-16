@@ -76,6 +76,7 @@ FSpawnObjectInfo& ASpawner::GetNextInfoToSpawn()
 	return SpawnObjectList[Index];
 }
 
+#if WITH_EDITOR
 void ASpawner::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -94,4 +95,5 @@ void ASpawner::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEven
 		}
 	}
 }
+#endif
 

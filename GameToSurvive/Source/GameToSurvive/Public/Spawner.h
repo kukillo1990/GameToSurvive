@@ -64,6 +64,8 @@ private:
 	void GetSpawnLocationAndRotation(FVector& SpawnLocation, FRotator& SpawnRotator);
 	FSpawnObjectInfo& GetNextInfoToSpawn();
 public:
+#if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 
 };

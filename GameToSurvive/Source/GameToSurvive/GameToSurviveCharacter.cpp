@@ -6,6 +6,7 @@
 #include "Gun.h"
 #include "Projectile.h"
 #include "Animation/AnimInstance.h"
+#include "DrawDebugHelpers.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AGameToSurviveCharacter
@@ -41,6 +42,13 @@ AGameToSurviveCharacter::AGameToSurviveCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	CoverCollision = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
+	CoverCollision->SetupAttachment(RootComponent);
+	CoverCollision->SetRelativeLocation(FVector::ZeroVector);
+	CoverCollision->InitSphereRadius(GetCapsuleComponent()->GetScaledCapsuleRadius() * 1.3f);
+	CoverCollision->BodyInstance.SetCollisionProfileName("CoverCollision");
+
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
@@ -48,6 +56,8 @@ AGameToSurviveCharacter::AGameToSurviveCharacter()
 void AGameToSurviveCharacter::BeginPlay()
 {
 	ACharacter::BeginPlay();
+
+	CoverCollision->OnComponentBeginOverlap.AddDynamic(this, &AGameToSurviveCharacter::FoundCover);		// set up a notification for when this component hits something blocking
 
 	if (GunToCarryClass && GetMesh())
 	{
@@ -85,6 +95,32 @@ void AGameToSurviveCharacter::PlayHitAnim()
 	}
 }
 
+void AGameToSurviveCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (bInCover && CoverActor)
+	{
+		FVector Origin;
+		FVector Extent;
+		CoverActor->GetActorBounds(false, Origin, Extent);
+		FVector ActorLocation = GetActorLocation();
+		FVector RelativePos  = CoverActor->GetActorTransform().InverseTransformPosition(ActorLocation);
+		float RelativePosDist = FVector::DotProduct(RelativePos, LocalMoveDir);
+		bCoverReachedMax = false;
+		bCoverReachedMin = false;
+		if (RelativePosDist >= CoverMaxMove)
+		{
+			bCoverReachedMax = true;
+		}
+		else if (RelativePosDist <= -CoverMaxMove)
+		{
+			bCoverReachedMin = true;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("%s!"), *RelativePos.ToString());
+		int i = 0;
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -118,6 +154,8 @@ void AGameToSurviveCharacter::SetupPlayerInputComponent(class UInputComponent* P
 
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AGameToSurviveCharacter::OnStartAim);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AGameToSurviveCharacter::OnStopAim);
+
+	PlayerInputComponent->BindAction("ToggleCover", IE_Pressed, this, &AGameToSurviveCharacter::ToggleCover);
 }
 
 
@@ -175,6 +213,65 @@ void AGameToSurviveCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVecto
 	}
 }
 
+void AGameToSurviveCharacter::FoundCover(UPrimitiveComponent* OverlappedComp, AActor* Other, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& OverlapInfo)
+{
+	if (!bInCover)
+	{
+		CoverActor = Other;
+	}	
+}
+
+void AGameToSurviveCharacter::ToggleCover()
+{
+	if (!bInCover)
+	{
+		if (CoverActor)
+		{
+			FVector CoverPosition;
+			FVector CoverNormal;
+			if (FindCoverPositionAndNormal(*CoverActor, CoverPosition, CoverNormal))
+			{
+				CoverMoveDir = FVector::CrossProduct(CoverNormal, FVector::UpVector);
+				
+				FBox AABB = CoverActor->CalculateComponentsBoundingBoxInLocalSpace();
+				FVector Extents = AABB.GetExtent();
+				FVector LocalScale = CoverActor->GetTransform().InverseTransformVector(FVector(GetCapsuleComponent()->GetScaledCapsuleRadius(), 0.0f, 0.0f));
+				LocalMoveDir = CoverActor->GetActorRotation().UnrotateVector(CoverMoveDir);
+				CoverMaxMove = FMath::Abs(FVector::DotProduct(Extents, LocalMoveDir)) - LocalScale.X;
+				bInCover = true;
+			}
+			
+		}
+	}
+	else
+	{
+		bInCover = false;
+	}
+}
+
+bool AGameToSurviveCharacter::FindCoverPositionAndNormal(const AActor& Actor, FVector& Position, FVector& Normal)
+{
+	FVector StartLocation = GetActorLocation();
+	FVector EndLocation = Actor.GetActorLocation();
+	FHitResult HitResult;
+	if (GetWorld()->LineTraceSingleByObjectType(HitResult, StartLocation, EndLocation, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllStaticObjects)))
+	{
+		if (HitResult.Actor == &Actor)
+		{
+			if (GetWorld()->LineTraceSingleByObjectType(HitResult, StartLocation, StartLocation - HitResult.ImpactNormal * 150.0f, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllStaticObjects)))
+			{
+				if (HitResult.Actor == &Actor)
+				{
+					Position = HitResult.ImpactPoint;
+					Normal = HitResult.ImpactNormal;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 void AGameToSurviveCharacter::TurnAtRate(float Rate)
 {
 	// calculate delta for this frame from the rate information
@@ -189,7 +286,7 @@ void AGameToSurviveCharacter::LookUpAtRate(float Rate)
 
 void AGameToSurviveCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
+	if ((Controller != NULL) && (Value != 0.0f) && !bInCover)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -205,12 +302,16 @@ void AGameToSurviveCharacter::MoveRight(float Value)
 {
 	if ( (Controller != NULL) && (Value != 0.0f) )
 	{
+		if (bInCover && ((Value > 0 && bCoverReachedMax) || (Value < 0 && bCoverReachedMin)))
+			return;
+
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 	
 		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		const FVector Direction = bInCover ? CoverMoveDir : FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
