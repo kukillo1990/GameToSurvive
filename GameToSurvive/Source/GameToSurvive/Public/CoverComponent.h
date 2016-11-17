@@ -11,6 +11,10 @@ class GAMETOSURVIVE_API UCoverComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cover, meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* CoverCollision;
+
 public:	
 	// Sets default values for this component's properties
 	UCoverComponent();
@@ -21,11 +25,28 @@ public:
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
 
+	UFUNCTION()
+		void FoundCover(UPrimitiveComponent* OverlappedComp, AActor* Other, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& OverlapInfo);
+
+	void ToggleCover();
+
+	bool FindCoverPositionAndNormal(const AActor& CoverActor, FVector& Position, FVector& Normal);
+
+	bool IsInCover() const { return bInCover;  }
+
+	bool CanMoveWithValue(float Value);
+
+	FVector& GetCoverMoveDir() { return CoverMoveDir;  }
 protected:
+	ACharacter* CharacterOwner = NULL;
+	bool bInCover = false;
+	AActor* CoverActor = NULL;
+	FVector CoverMoveDir = FVector::ZeroVector;
+	FVector LocalMoveDir = FVector::ZeroVector;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class AStaticMeshActor* PlaceToCover = NULL;
+	float CoverMaxMove = 0.0f;
+	bool bCoverReachedMax = false;
+	bool bCoverReachedMin = false;
 
-	bool bIsCovering = false;
-	
+
 };

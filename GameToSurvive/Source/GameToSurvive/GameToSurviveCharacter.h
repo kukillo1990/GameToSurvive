@@ -16,9 +16,9 @@ class AGameToSurviveCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cover, meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* CoverCollision;
+		class UCoverComponent* CoverComponent;
+	
 public:
 	AGameToSurviveCharacter();
 
@@ -77,13 +77,6 @@ protected:
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
-	UFUNCTION()
-	void FoundCover(UPrimitiveComponent* OverlappedComp, AActor* Other, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& OverlapInfo);
-
-	void ToggleCover();
-
-	bool FindCoverPositionAndNormal(const AActor& CoverActor, FVector& Position, FVector& Normal);
-
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -104,15 +97,10 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 private:
-	bool bInCover = false;
+	
 	AGun* GunCarried;
 	unsigned int LastHitAnimIndex = 0;
-	AActor* CoverActor = NULL;
-	FVector CoverMoveDir = FVector::ZeroVector;
-	FVector LocalMoveDir = FVector::ZeroVector;
 
-	float CoverMaxMove = 0.0f;
-	bool bCoverReachedMax = false;
-	bool bCoverReachedMin = false;
+
 };
 
