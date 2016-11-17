@@ -6,6 +6,10 @@
 #include "CoverComponent.generated.h"
 
 
+/*
+ TODO: Check collision high/low, change channel cover meshes, Clamp camera
+*/
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class GAMETOSURVIVE_API UCoverComponent : public UActorComponent
 {
@@ -32,7 +36,14 @@ public:
 
 	bool FindCoverPositionAndNormal(const AActor& CoverActor, FVector& Position, FVector& Normal);
 
+	UFUNCTION(BlueprintCallable, Category = "Cover")
 	bool IsInCover() const { return bInCover;  }
+
+	UFUNCTION(BlueprintCallable, Category = "Cover")
+	bool IsMaxRightCover() const { return bCoverReachedMax; }
+
+	UFUNCTION(BlueprintCallable, Category = "Cover")
+	bool IsMinRightCover() const { return bCoverReachedMin; }
 
 	bool CanMoveWithValue(float Value);
 
