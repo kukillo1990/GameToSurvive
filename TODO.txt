@@ -1,0 +1,5 @@
+Change speed of jog
+Adjust jump
+Remove jitter
+Align walk-aim
+Change speed of crouch
