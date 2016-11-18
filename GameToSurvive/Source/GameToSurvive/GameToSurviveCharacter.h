@@ -15,9 +15,6 @@ class AGameToSurviveCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Cover, meta = (AllowPrivateAccess = "true"))
-		class UCoverComponent* CoverComponent;
 	
 public:
 	AGameToSurviveCharacter();
@@ -47,6 +44,9 @@ public:
 
 
 	virtual void Tick(float DeltaSeconds) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Cover")
+	class UCoverComponent* GetCoverComponent() const { return CoverComponent;  }
 
 protected:
 
@@ -97,7 +97,7 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 private:
-	
+	class UCoverComponent* CoverComponent;
 	AGun* GunCarried;
 	unsigned int LastHitAnimIndex = 0;
 

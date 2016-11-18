@@ -48,6 +48,10 @@ public:
 	bool CanMoveWithValue(float Value);
 
 	FVector& GetCoverMoveDir() { return CoverMoveDir;  }
+
+	void GetActorOrigin(const AActor& Actor, FVector& Origin);
+	void GetRelativePosToOrigin(const AActor& Actor, FVector& RelativePos);
+
 protected:
 	ACharacter* CharacterOwner = NULL;
 	bool bInCover = false;

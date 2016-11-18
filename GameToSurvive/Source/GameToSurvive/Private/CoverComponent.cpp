@@ -50,11 +50,8 @@ void UCoverComponent::TickComponent( float DeltaTime, ELevelTick TickType, FActo
 	Super::TickComponent( DeltaTime, TickType, ThisTickFunction );
 	if (bInCover && CoverActor)
 	{
-		FVector Origin;
-		FVector Extent;
-		CoverActor->GetActorBounds(false, Origin, Extent);
-		FVector ActorLocation = GetOwner()->GetActorLocation();
-		FVector RelativePos = CoverActor->GetActorTransform().InverseTransformPosition(ActorLocation);
+		FVector RelativePos;
+		GetRelativePosToOrigin(*CoverActor, RelativePos);
 		float RelativePosDist = FVector::DotProduct(RelativePos, LocalMoveDir);
 		bCoverReachedMax = false;
 		bCoverReachedMin = false;
@@ -89,7 +86,6 @@ void UCoverComponent::ToggleCover()
 			if (FindCoverPositionAndNormal(*CoverActor, CoverPosition, CoverNormal))
 			{
 				CoverMoveDir = FVector::CrossProduct(CoverNormal, FVector::UpVector);
-
 				FBox AABB = CoverActor->CalculateComponentsBoundingBoxInLocalSpace();
 				FVector Extents = AABB.GetExtent();
 				FVector LocalScale = CoverActor->GetTransform().InverseTransformVector(FVector(CharacterOwner->GetCapsuleComponent()->GetScaledCapsuleRadius(), 0.0f, 0.0f));
@@ -109,7 +105,8 @@ void UCoverComponent::ToggleCover()
 bool UCoverComponent::FindCoverPositionAndNormal(const AActor& Actor, FVector& Position, FVector& Normal)
 {
 	FVector StartLocation = GetOwner()->GetActorLocation();
-	FVector EndLocation = Actor.GetActorLocation();
+	FVector EndLocation;
+	GetActorOrigin(Actor, EndLocation);
 	FHitResult HitResult;
 	if (GetWorld()->LineTraceSingleByObjectType(HitResult, StartLocation, EndLocation, FCollisionObjectQueryParams(FCollisionObjectQueryParams::InitType::AllStaticObjects)))
 	{
@@ -134,5 +131,21 @@ bool UCoverComponent::CanMoveWithValue(float Value)
 	if ((Value > 0 && bCoverReachedMax) || (Value < 0 && bCoverReachedMin))
 		return false;
 	return true;
+}
+
+void UCoverComponent::GetActorOrigin(const AActor& Actor, FVector& Origin)
+{
+	FVector Extents;
+	Actor.GetActorBounds(false, Origin, Extents);
+}
+
+void UCoverComponent::GetRelativePosToOrigin(const AActor& Actor, FVector& RelativePos)
+{
+	FVector OwnerLocation = GetOwner()->GetActorLocation();
+	FTransform ActorTransform = Actor.GetActorTransform();
+	FVector Origin;
+	GetActorOrigin(Actor, Origin);
+	ActorTransform.SetLocation(Origin);
+	RelativePos = ActorTransform.InverseTransformPosition(OwnerLocation);
 }
 
